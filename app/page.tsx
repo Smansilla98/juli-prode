@@ -93,8 +93,13 @@ export default function Home() {
             numeroHabitacion: '',
           })
         } else {
-          console.error('Error al guardar:', response.statusText)
-          alert('Error al guardar los datos')
+          let message = 'Error al guardar los datos'
+          try {
+            const err = await response.json()
+            if (err && err.error) message = `${err.error}${err.missing ? ': ' + err.missing.join(', ') : ''}`
+          } catch (_) {}
+          console.error('Error al guardar:', message)
+          alert(message)
         }
       } catch (error) {
         console.error('Error al guardar:', error)

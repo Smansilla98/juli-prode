@@ -19,11 +19,16 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    
-    // Validar que tenemos todos los campos requeridos
-    if (!body.nombre || !body.fechaNacimiento || !body.horaNacimiento || !body.peso || !body.longitud || !body.tipoParto || !body.numeroHabitacion) {
+    // Validar que tenemos todos los campos requeridos (aceptar '0' y valores numéricos)
+    const requiredFields = ['nombre', 'fechaNacimiento', 'horaNacimiento', 'peso', 'longitud', 'tipoParto', 'numeroHabitacion']
+    const missing: string[] = []
+    const isEmpty = (v: any) => v === undefined || v === null || String(v).trim() === ''
+    for (const f of requiredFields) {
+      if (isEmpty(body[f])) missing.push(f)
+    }
+    if (missing.length > 0) {
       return NextResponse.json(
-        { error: 'Faltan campos requeridos' },
+        { error: 'Faltan campos requeridos', missing },
         { status: 400 }
       )
     }
