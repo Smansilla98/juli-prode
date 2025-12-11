@@ -33,24 +33,20 @@ export default function Home() {
 
   // Cargar datos guardados al montar el componente
   useEffect(() => {
-    // Verificar que estamos en el cliente
-    if (typeof window !== 'undefined') {
-      const stored = localStorage.getItem('prodeNacimiento')
-      if (stored) {
-        try {
-          const parsed = JSON.parse(stored)
-          // Si es un array, usarlo directamente; si es un objeto antiguo, convertirlo a array
-          if (Array.isArray(parsed)) {
-            setSavedData(parsed)
-          } else {
-            // Migrar datos antiguos al nuevo formato
-            setSavedData([{ ...parsed, id: Date.now().toString(), fechaCreacion: new Date().toISOString() }])
-          }
-        } catch (error) {
-          console.error('Error al cargar datos:', error)
+    const loadData = async () => {
+      try {
+        const response = await fetch('/api/prode')
+        if (response.ok) {
+          const data = await response.json()
+          setSavedData(data)
+        } else {
+          console.error('Error al cargar datos:', response.statusText)
         }
+      } catch (error) {
+        console.error('Error al cargar datos:', error)
       }
     }
+    loadData()
   }, [])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -72,41 +68,66 @@ export default function Home() {
     e.preventDefault()
     setIsSubmitting(true)
     
-    // Crear nueva entrada con ID y fecha de creación
-    const newEntry: ProdeData = {
-      ...formData,
-      id: Date.now().toString(),
-      fechaCreacion: new Date().toISOString(),
-    }
-    
-    // Simular un pequeño delay para mejor UX
-    setTimeout(() => {
-      if (typeof window !== 'undefined') {
-        const updatedData = [newEntry, ...savedData]
-        localStorage.setItem('prodeNacimiento', JSON.stringify(updatedData))
-        setSavedData(updatedData)
-        
-        // Limpiar formulario
-        setFormData({
-          nombre: '',
-          fechaNacimiento: '',
-          horaNacimiento: '',
-          peso: '',
-          longitud: '',
-          tipoParto: 'Natural',
-          numeroHabitacion: '',
+    const saveData = async () => {
+      try {
+        const response = await fetch('/api/prode', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(formData),
         })
+
+        if (response.ok) {
+          const newEntry = await response.json()
+          setSavedData(prev => [newEntry, ...prev])
+          
+          // Limpiar formulario
+          setFormData({
+            nombre: '',
+            fechaNacimiento: '',
+            horaNacimiento: '',
+            peso: '',
+            longitud: '',
+            tipoParto: 'Natural',
+            numeroHabitacion: '',
+          })
+        } else {
+          console.error('Error al guardar:', response.statusText)
+          alert('Error al guardar los datos')
+        }
+      } catch (error) {
+        console.error('Error al guardar:', error)
+        alert('Error al guardar los datos')
+      } finally {
+        setIsSubmitting(false)
       }
-      setIsSubmitting(false)
-    }, 300)
+    }
+
+    // Simular un pequeño delay para mejor UX
+    setTimeout(saveData, 300)
   }
 
   const handleDelete = (id: string) => {
-    if (typeof window !== 'undefined') {
-      const updatedData = savedData.filter(entry => entry.id !== id)
-      localStorage.setItem('prodeNacimiento', JSON.stringify(updatedData))
-      setSavedData(updatedData)
+    const deleteData = async () => {
+      try {
+        const response = await fetch(`/api/prode?id=${id}`, {
+          method: 'DELETE',
+        })
+
+        if (response.ok) {
+          setSavedData(prev => prev.filter(entry => entry.id !== id))
+        } else {
+          console.error('Error al eliminar:', response.statusText)
+          alert('Error al eliminar los datos')
+        }
+      } catch (error) {
+        console.error('Error al eliminar:', error)
+        alert('Error al eliminar los datos')
+      }
     }
+
+    deleteData()
   }
 
   return (
@@ -319,6 +340,9 @@ export default function Home() {
                     <th className="px-6 py-4 text-left text-xs font-bold text-amber-900/80 uppercase tracking-wider">
                       Habitación
                     </th>
+                    <th className="px-6 py-4 text-left text-xs font-bold text-amber-900/80 uppercase tracking-wider">
+                      Acción
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-amber-100">
@@ -360,6 +384,14 @@ export default function Home() {
                         <span className="px-2 py-1 bg-stone-100 text-stone-700 rounded-lg">
                           {entry.numeroHabitacion}
                         </span>
+                      </td>
+                      <td className="px-6 py-4 text-sm">
+                        <button
+                          onClick={() => handleDelete(entry.id)}
+                          className="px-3 py-1.5 bg-red-100 text-red-700 rounded-lg font-semibold hover:bg-red-200 transition-colors duration-200 text-xs"
+                        >
+                          Eliminar
+                        </button>
                       </td>
                     </tr>
                   ))}
