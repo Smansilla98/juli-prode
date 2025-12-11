@@ -35,10 +35,12 @@ export async function POST(request: NextRequest) {
 
     const newProde = saveProde(body)
     return NextResponse.json(newProde, { status: 201 })
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error in POST /api/prode:', error)
+    // Enviar mensaje de error simple para facilitar debugging remoto
+    const msg = (error && error.message) ? String(error.message) : 'Error al guardar los datos'
     return NextResponse.json(
-      { error: 'Error al guardar los datos' },
+      { error: 'Error al guardar los datos', message: msg },
       { status: 500 }
     )
   }

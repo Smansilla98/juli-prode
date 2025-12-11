@@ -2,13 +2,23 @@ import fs from 'fs'
 import path from 'path'
 
 // Crear directorio de datos si no existe
-const dataDir = path.join(process.cwd(), 'data')
+// En entornos serverless (Vercel) el sistema de archivos puede ser de solo lectura.
+// Usamos la variable de entorno `PRODE_DATA_PATH` si está definida, o `/tmp/prode-data`
+// para entornos como Vercel donde `/tmp` sí es escribible (pero es efímero).
+const defaultDataDir = path.join(process.cwd(), 'data')
+const serverlessTmp = path.join('/tmp', 'prode-data')
+const dataDir = process.env.PRODE_DATA_PATH || (process.env.VERCEL ? serverlessTmp : defaultDataDir)
 const dataFile = path.join(dataDir, 'prode.json')
 
 // Asegurar que el directorio existe
 export function ensureDataDir() {
-  if (!fs.existsSync(dataDir)) {
-    fs.mkdirSync(dataDir, { recursive: true })
+  try {
+    if (!fs.existsSync(dataDir)) {
+      fs.mkdirSync(dataDir, { recursive: true })
+    }
+  } catch (err) {
+    console.error('No se pudo crear el directorio de datos:', dataDir, err)
+    throw err
   }
 }
 
