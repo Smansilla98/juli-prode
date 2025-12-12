@@ -27,7 +27,20 @@ export async function GET(request: NextRequest) {
       throw error
     }
 
-    return NextResponse.json(data || [])
+    // Mapear al formato que espera el frontend
+    const mapped = (data || []).map((d: any) => ({
+      id: d.id !== undefined && d.id !== null ? String(d.id) : undefined,
+      nombre: d.nombre,
+      fechaNacimiento: d.fecha_nacimiento !== undefined && d.fecha_nacimiento !== null ? String(d.fecha_nacimiento) : undefined,
+      horaNacimiento: d.hora_nacimiento !== undefined && d.hora_nacimiento !== null ? String(d.hora_nacimiento) : undefined,
+      peso: d.peso !== undefined && d.peso !== null ? String(d.peso) : undefined,
+      longitud: d.longitud !== undefined && d.longitud !== null ? String(d.longitud) : undefined,
+      tipoParto: d.tipo_parto,
+      numeroHabitacion: d.numero_habitacion,
+      fechaCreacion: d.created_at,
+    }))
+
+    return NextResponse.json(mapped)
   } catch (error) {
     console.error('Error in GET /api/prode:', error)
     return NextResponse.json(
