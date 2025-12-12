@@ -30,6 +30,8 @@ export default function Home() {
 
   const [savedData, setSavedData] = useState<ProdeData[]>([])
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 5
 
   // Cargar datos guardados al montar el componente
   useEffect(() => {
@@ -134,6 +136,12 @@ export default function Home() {
 
     deleteData()
   }
+
+  // Lógica de paginación
+  const totalPages = Math.ceil(savedData.length / itemsPerPage)
+  const startIndex = (currentPage - 1) * itemsPerPage
+  const endIndex = startIndex + itemsPerPage
+  const paginatedData = savedData.slice(startIndex, endIndex)
 
   return (
     <main className="min-h-screen flex items-center justify-center p-4 py-12">
@@ -319,6 +327,11 @@ export default function Home() {
               <span className="inline-block px-4 py-1.5 bg-gradient-to-r from-amber-100 to-orange-100 text-amber-800 rounded-full text-sm font-semibold">
                 {savedData.length} {savedData.length === 1 ? 'prode' : 'prodes'}
               </span>
+              {totalPages > 1 && (
+                <p className="text-xs text-amber-700 mt-2">
+                  Página {currentPage} de {totalPages}
+                </p>
+              )}
             </div>
             <div className="overflow-x-auto rounded-2xl border border-amber-200/50">
               <table className="w-full border-collapse">
@@ -351,7 +364,7 @@ export default function Home() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-amber-100">
-                  {savedData.map((entry, index) => (
+                  {paginatedData.map((entry, index) => (
                     <tr 
                       key={entry.id} 
                       className="hover:bg-gradient-to-r hover:from-amber-50/50 hover:to-orange-50/50 transition-all duration-200"
@@ -393,7 +406,7 @@ export default function Home() {
                       <td className="px-6 py-4 text-sm">
                         <button
                           onClick={() => handleDelete(entry.id)}
-                          className="px-3 py-1.5 bg-red-100 text-red-700 rounded-lg font-semibold hover:bg-red-200 transition-colors duration-200 text-xs"
+                          className="hidden px-3 py-1.5 bg-red-100 text-red-700 rounded-lg font-semibold hover:bg-red-200 transition-colors duration-200 text-xs"
                         >
                           Eliminar
                         </button>
@@ -403,6 +416,43 @@ export default function Home() {
                 </tbody>
               </table>
             </div>
+
+            {/* Controles de Paginación */}
+            {totalPages > 1 && (
+              <div className="mt-6 flex items-center justify-between gap-4 flex-wrap">
+                <button
+                  onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                  disabled={currentPage === 1}
+                  className="px-6 py-2.5 bg-amber-100 text-amber-800 rounded-lg font-semibold hover:bg-amber-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
+                >
+                  ← Anterior
+                </button>
+
+                <div className="flex gap-2 flex-wrap justify-center">
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                    <button
+                      key={page}
+                      onClick={() => setCurrentPage(page)}
+                      className={`w-10 h-10 rounded-lg font-bold transition-all duration-200 ${
+                        currentPage === page
+                          ? 'bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 text-white shadow-lg'
+                          : 'bg-amber-100 text-amber-800 hover:bg-amber-200'
+                      }`}
+                    >
+                      {page}
+                    </button>
+                  ))}
+                </div>
+
+                <button
+                  onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                  disabled={currentPage === totalPages}
+                  className="px-6 py-2.5 bg-amber-100 text-amber-800 rounded-lg font-semibold hover:bg-amber-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
+                >
+                  Siguiente →
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>

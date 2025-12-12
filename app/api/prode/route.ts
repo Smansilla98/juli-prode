@@ -1,11 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getAllProde, saveProde, deleteProde } from '@/lib/storage'
+import { supabase } from '@/lib/supabase'
 
 // GET: Obtener todos los prodes guardados
 export async function GET(request: NextRequest) {
   try {
-    const allProdes = getAllProde()
-    return NextResponse.json(allProdes)
+    const { data, error } = await supabase
+      .from('prodes')
+      .select('*')
+      .order('created_at', { ascending: false })
+
+    if (error) {
+      throw error
+    }
+
+    return NextResponse.json(data || [])
   } catch (error) {
     console.error('Error in GET /api/prode:', error)
     return NextResponse.json(
@@ -19,13 +27,15 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    // Validar que tenemos todos los campos requeridos (aceptar '0' y valores numéricos)
+    // Validar que tenemos todos los campos requeridos
     const requiredFields = ['nombre', 'fechaNacimiento', 'horaNacimiento', 'peso', 'longitud', 'tipoParto', 'numeroHabitacion']
     const missing: string[] = []
     const isEmpty = (v: any) => v === undefined || v === null || String(v).trim() === ''
+    
     for (const f of requiredFields) {
       if (isEmpty(body[f])) missing.push(f)
     }
+    
     if (missing.length > 0) {
       return NextResponse.json(
         { error: 'Faltan campos requeridos', missing },
@@ -33,11 +43,40 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const newProde = saveProde(body)
-    return NextResponse.json(newProde, { status: 201 })
+    const { data, error } = await supabase
+      .from('prodes')
+      .insert([
+        {
+          nombre: body.nombre,
+          fecha_nacimiento: body.fechaNacimiento,
+          hora_nacimiento: body.horaNacimiento,
+          peso: parseFloat(body.peso),
+          longitud: parseFloat(body.longitud),
+          tipo_parto: body.tipoParto,
+          numero_habitacion: body.numeroHabitacion,
+        }
+      ])
+      .select()
+
+    if (error) {
+      throw error
+    }
+
+    // Transformar la respuesta al formato esperado por el frontend
+    const newProde = data?.[0]
+    return NextResponse.json({
+      id: newProde.id.toString(),
+      nombre: newProde.nombre,
+      fechaNacimiento: newProde.fecha_nacimiento,
+      horaNacimiento: newProde.hora_nacimiento,
+      peso: newProde.peso.toString(),
+      longitud: newProde.longitud.toString(),
+      tipoParto: newProde.tipo_parto,
+      numeroHabitacion: newProde.numero_habitacion,
+      fechaCreacion: newProde.created_at,
+    }, { status: 201 })
   } catch (error: any) {
     console.error('Error in POST /api/prode:', error)
-    // Enviar mensaje de error simple para facilitar debugging remoto
     const msg = (error && error.message) ? String(error.message) : 'Error al guardar los datos'
     return NextResponse.json(
       { error: 'Error al guardar los datos', message: msg },
@@ -59,7 +98,15 @@ export async function DELETE(request: NextRequest) {
       )
     }
 
-    deleteProde(id)
+    const { error } = await supabase
+      .from('prodes')
+      .delete()
+      .eq('id', parseInt(id))
+
+    if (error) {
+      throw error
+    }
+
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error('Error in DELETE /api/prode:', error)
