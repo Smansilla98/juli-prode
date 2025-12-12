@@ -374,7 +374,7 @@ export default function Home() {
                         {entry.nombre}
                       </td>
                       <td className="px-6 py-4 text-sm text-amber-900/80">
-                        {new Date(entry.fechaNacimiento).toLocaleDateString('es-AR')}
+                        {entry.fechaNacimiento ? new Date(entry.fechaNacimiento + 'T00:00:00').toLocaleDateString('es-AR') : '-'}
                       </td>
                       <td className="px-6 py-4 text-sm text-amber-900/80 font-medium">
                         {entry.horaNacimiento}
