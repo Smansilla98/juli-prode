@@ -1,9 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase'
+import { supabase, isSupabaseConfigured } from '@/lib/supabase'
 
 // GET: Obtener todos los prodes guardados
 export async function GET(request: NextRequest) {
   try {
+    if (!isSupabaseConfigured()) {
+      return NextResponse.json(
+        { error: 'Supabase no está configurado. Por favor configura las variables de entorno.' },
+        { status: 503 }
+      )
+    }
+
+    if (!supabase) {
+      return NextResponse.json(
+        { error: 'Error de conexión a la base de datos' },
+        { status: 500 }
+      )
+    }
+
     const { data, error } = await supabase
       .from('prodes')
       .select('*')
@@ -26,6 +40,20 @@ export async function GET(request: NextRequest) {
 // POST: Guardar un nuevo prode
 export async function POST(request: NextRequest) {
   try {
+    if (!isSupabaseConfigured()) {
+      return NextResponse.json(
+        { error: 'Supabase no está configurado. Por favor configura las variables de entorno.' },
+        { status: 503 }
+      )
+    }
+
+    if (!supabase) {
+      return NextResponse.json(
+        { error: 'Error de conexión a la base de datos' },
+        { status: 500 }
+      )
+    }
+
     const body = await request.json()
     // Validar que tenemos todos los campos requeridos
     const requiredFields = ['nombre', 'fechaNacimiento', 'horaNacimiento', 'peso', 'longitud', 'tipoParto', 'numeroHabitacion']
@@ -88,6 +116,20 @@ export async function POST(request: NextRequest) {
 // DELETE: Eliminar un prode
 export async function DELETE(request: NextRequest) {
   try {
+    if (!isSupabaseConfigured()) {
+      return NextResponse.json(
+        { error: 'Supabase no está configurado. Por favor configura las variables de entorno.' },
+        { status: 503 }
+      )
+    }
+
+    if (!supabase) {
+      return NextResponse.json(
+        { error: 'Error de conexión a la base de datos' },
+        { status: 500 }
+      )
+    }
+
     const { searchParams } = new URL(request.url)
     const id = searchParams.get('id')
 
